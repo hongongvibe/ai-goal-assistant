@@ -1,191 +1,160 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useStore } from '@/store/useStore';
+import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { calculateProgress } from '@/lib/mockData';
-import { Plus, Trash2, Edit, Target } from 'lucide-react';
-import { GoalStatus } from '@/types';
+import { useStore } from '@/store/useStore';
 
 export default function GoalsPage() {
-  const router = useRouter();
-  const { isAuthenticated, goals, deleteGoal } = useStore();
-  const [filter, setFilter] = useState<GoalStatus | 'all'>('all');
+  const goals = useStore((state) => state.goals);
+  const loadGoals = useStore((state) => state.loadGoals);
+  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
+    loadGoals();
+  }, [loadGoals]);
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  const filteredGoals =
-    filter === 'all' ? goals : goals.filter((g) => g.status === filter);
-
-  const handleDelete = (id: string, title: string) => {
-    if (confirm(`"${title}" 목표를 삭제하시겠습니까?`)) {
-      deleteGoal(id);
-    }
-  };
+  const filteredGoals = goals.filter((goal) => {
+    if (filter === 'active' && goal.status !== 'active') return false;
+    if (filter === 'completed' && goal.status !== 'completed') return false;
+    if (categoryFilter !== 'all' && goal.category !== categoryFilter) return false;
+    return true;
+  });
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">목표 관리</h1>
-          <button
-            onClick={() => router.push('/goals/new')}
-            className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-lg"
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">목표 관리</h1>
+            <p className="text-gray-600 mt-1">나의 모든 목표를 관리하세요</p>
+          </div>
+          <Link
+            href="/goals/new"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
-            <Plus className="w-5 h-5" />
-            <span>새 목표</span>
-          </button>
+            + 새 목표 추가
+          </Link>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex space-x-2 border-b border-gray-200">
-          {(['all', 'active', 'completed'] as const).map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-4 py-2 font-medium transition border-b-2 ${
-                filter === status
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {status === 'all' && '전체'}
-              {status === 'active' && '진행중'}
-              {status === 'completed' && '완료'}
-            </button>
-          ))}
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex gap-4 items-center">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                전체
+              </button>
+              <button
+                onClick={() => setFilter('active')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  filter === 'active' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                진행 중
+              </button>
+              <button
+                onClick={() => setFilter('completed')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  filter === 'completed' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                완료
+              </button>
+            </div>
+
+            <div className="ml-auto">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">모든 카테고리</option>
+                <option value="health">건강</option>
+                <option value="learning">학습</option>
+                <option value="finance">재정</option>
+                <option value="career">커리어</option>
+                <option value="other">기타</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Goals Grid */}
-        {filteredGoals.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center border border-gray-200">
-            <Target className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              {filter === 'all'
-                ? '목표가 없습니다'
-                : filter === 'active'
-                ? '진행중인 목표가 없습니다'
-                : '완료된 목표가 없습니다'}
-            </h3>
-            <p className="text-gray-500 mb-6">
-              새로운 목표를 만들어 시작해보세요!
-            </p>
-            <button
-              onClick={() => router.push('/goals/new')}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredGoals.map((goal) => (
+            <Link
+              key={goal.id}
+              href={`/goals/${goal.id}`}
+              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
             >
-              목표 만들기
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGoals.map((goal) => {
-              const progress = calculateProgress(goal);
-              return (
-                <div
-                  key={goal.id}
-                  className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-lg transition"
-                >
-                  {/* Category Badge */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">
-                      {goal.category}
-                    </span>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => router.push(`/goals/${goal.id}/edit`)}
-                        className="p-2 text-gray-400 hover:text-blue-600 transition"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(goal.id, goal.title)}
-                        className="p-2 text-gray-400 hover:text-red-600 transition"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="text-xl font-semibold text-gray-900">{goal.title}</h3>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  goal.category === 'health' ? 'bg-green-100 text-green-700' :
+                  goal.category === 'learning' ? 'bg-blue-100 text-blue-700' :
+                  goal.category === 'finance' ? 'bg-yellow-100 text-yellow-700' :
+                  goal.category === 'career' ? 'bg-purple-100 text-purple-700' :
+                  'bg-gray-100 text-gray-700'
+                }`}>
+                  {goal.category === 'health' ? '건강' :
+                   goal.category === 'learning' ? '학습' :
+                   goal.category === 'finance' ? '재정' :
+                   goal.category === 'career' ? '커리어' : '기타'}
+                </span>
+              </div>
 
-                  {/* Title */}
-                  <h3
-                    className="text-lg font-semibold text-gray-900 mb-2 cursor-pointer hover:text-indigo-600 transition"
-                    onClick={() => router.push(`/goals/${goal.id}`)}
-                  >
-                    {goal.title}
-                  </h3>
+              <p className="text-gray-600 mb-4 line-clamp-2">{goal.description}</p>
 
-                  {/* Description */}
-                  {goal.description && (
-                    <p className="text-sm text-gray-500 mb-4 line-clamp-2">
-                      {goal.description}
-                    </p>
-                  )}
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">목표</span>
+                  <span className="font-medium text-gray-900">{goal.target_value} {goal.unit}</span>
+                </div>
 
-                  {/* Goal Info */}
-                  <div className="space-y-2 mb-4">
-                    {goal.goalType === 'quantitative' && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">진행</span>
-                        <span className="font-medium text-gray-900">
-                          {goal.currentValue || 0} / {goal.targetValue} {goal.unit}
-                        </span>
-                      </div>
-                    )}
-                    {goal.goalType === 'habit' && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">빈도</span>
-                        <span className="font-medium text-gray-900">
-                          주 {goal.weeklyFrequency || 0}회
-                        </span>
-                      </div>
-                    )}
-                    {goal.endDate && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">마감일</span>
-                        <span className="font-medium text-gray-900">
-                          {goal.endDate.replace(/-/g, '. ')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">기간</span>
+                  <span className="font-medium text-gray-900">
+                    {new Date(goal.start_date).toLocaleDateString('ko-KR')} ~ {new Date(goal.end_date).toLocaleDateString('ko-KR')}
+                  </span>
+                </div>
 
-                  {/* Progress Bar */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-500">진행률</span>
-                      <span className="text-sm font-bold text-indigo-600">
-                        {progress}%
-                      </span>
+                {goal.status === 'active' && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">진행률</span>
+                      <span className="font-medium text-gray-900">{goal.progress}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-indigo-600 h-2 rounded-full transition-all"
-                        style={{ width: `${progress}%` }}
-                      ></div>
+                        className="bg-blue-600 h-2 rounded-full transition-all"
+                        style={{ width: `${goal.progress}%` }}
+                      />
                     </div>
-                  </div>
+                  </>
+                )}
 
-                  {/* View Details Button */}
-                  <button
-                    onClick={() => router.push(`/goals/${goal.id}`)}
-                    className="w-full mt-4 py-2 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition"
-                  >
-                    상세 보기
-                  </button>
-                </div>
-              );
-            })}
+                {goal.status === 'completed' && (
+                  <div className="flex items-center justify-center bg-green-50 text-green-700 py-2 rounded-lg">
+                    <span className="font-medium">✅ 달성 완료!</span>
+                  </div>
+                )}
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {filteredGoals.length === 0 && (
+          <div className="bg-white rounded-lg shadow p-12 text-center">
+            <p className="text-gray-500 text-lg">해당하는 목표가 없습니다.</p>
+            <Link href="/goals/new" className="text-blue-600 hover:text-blue-700 mt-2 inline-block">
+              새 목표를 만들어보세요 →
+            </Link>
           </div>
         )}
       </div>

@@ -2,55 +2,33 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useStore } from '@/store/useStore';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { ArrowLeft } from 'lucide-react';
-import { GoalCategory, GoalType } from '@/types';
+import { useStore } from '@/store/useStore';
+import { Goal } from '@/types';
 
 export default function NewGoalPage() {
   const router = useRouter();
   const addGoal = useStore((state) => state.addGoal);
+  const user = useStore((state) => state.user);
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: '학습' as GoalCategory,
-    goalType: 'quantitative' as GoalType,
-    targetValue: 0,
-    currentValue: 0,
-    unit: '',
-    weeklyFrequency: 3,
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: '',
+    category: 'health' as Goal['category'],
+    start_date: new Date().toISOString().split('T')[0],
+    end_date: '',
+    target_value: 0,
+    unit: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title) {
-      alert('목표 제목을 입력해주세요.');
-      return;
-    }
-
-    addGoal({
-      title: formData.title,
-      description: formData.description || undefined,
-      category: formData.category,
-      goalType: formData.goalType,
-      targetValue:
-        formData.goalType === 'quantitative'
-          ? formData.targetValue
-          : undefined,
-      currentValue:
-        formData.goalType === 'quantitative'
-          ? formData.currentValue
-          : undefined,
-      unit: formData.goalType === 'quantitative' ? formData.unit : undefined,
-      weeklyFrequency:
-        formData.goalType === 'habit' ? formData.weeklyFrequency : undefined,
-      startDate: new Date(formData.startDate),
-      endDate: formData.endDate ? new Date(formData.endDate) : undefined,
+    await addGoal({
+      user_id: user?.id || '936cff5a-6b36-470b-ad38-6c03b9004ac6',
+      ...formData,
       status: 'active',
+      progress: 0
     });
 
     router.push('/goals');
@@ -58,240 +36,140 @@ export default function NewGoalPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-6"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>뒤로가기</span>
-        </button>
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">새 목표 만들기</h1>
+          <p className="text-gray-600 mt-1">달성하고 싶은 목표를 설정하세요</p>
+        </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">새 목표 만들기</h1>
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+              목표 제목 *
+            </label>
+            <input
+              id="title"
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="예: 매일 아침 운동하기"
+              required
+            />
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+              상세 설명
+            </label>
+            <textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={4}
+              placeholder="목표에 대한 자세한 설명을 작성하세요"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+              카테고리 *
+            </label>
+            <select
+              id="category"
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value as Goal['category'] })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              <option value="health">건강</option>
+              <option value="learning">학습</option>
+              <option value="finance">재정</option>
+              <option value="career">커리어</option>
+              <option value="other">기타</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                목표 제목 *
+              <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-2">
+                시작일 *
               </label>
               <input
-                type="text"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                placeholder="예) TOEIC 900점 달성, 매일 30분 운동"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                id="start_date"
+                type="date"
+                value={formData.start_date}
+                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
 
-            {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                목표 설명
+              <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-2">
+                종료일 *
               </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="목표에 대한 설명을 입력하세요"
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+              <input
+                id="end_date"
+                type="date"
+                value={formData.end_date}
+                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="target_value" className="block text-sm font-medium text-gray-700 mb-2">
+                목표 수치 *
+              </label>
+              <input
+                id="target_value"
+                type="number"
+                value={formData.target_value}
+                onChange={(e) => setFormData({ ...formData, target_value: Number(e.target.value) })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="100"
+                required
+                min="1"
               />
             </div>
 
-            {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                카테고리 *
+              <label htmlFor="unit" className="block text-sm font-medium text-gray-700 mb-2">
+                단위 *
               </label>
-              <div className="grid grid-cols-3 gap-3">
-                {(['건강', '학습', '커리어', '취미', '재정', '기타'] as const).map(
-                  (cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, category: cat })}
-                      className={`px-4 py-3 rounded-lg border-2 transition ${
-                        formData.category === cat
-                          ? 'border-indigo-600 bg-indigo-50 text-indigo-600'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  )
-                )}
-              </div>
+              <input
+                id="unit"
+                type="text"
+                value={formData.unit}
+                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="예: 일, 시간, 권"
+                required
+              />
             </div>
+          </div>
 
-            {/* Goal Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                목표 유형 *
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFormData({ ...formData, goalType: 'quantitative' })
-                  }
-                  className={`px-4 py-3 rounded-lg border-2 transition ${
-                    formData.goalType === 'quantitative'
-                      ? 'border-indigo-600 bg-indigo-50 text-indigo-600'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="font-medium">정량적 목표</div>
-                  <div className="text-xs mt-1 opacity-70">숫자로 측정</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, goalType: 'habit' })}
-                  className={`px-4 py-3 rounded-lg border-2 transition ${
-                    formData.goalType === 'habit'
-                      ? 'border-indigo-600 bg-indigo-50 text-indigo-600'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="font-medium">습관형 목표</div>
-                  <div className="text-xs mt-1 opacity-70">반복 실천</div>
-                </button>
-              </div>
-            </div>
-
-            {/* Quantitative Goal Fields */}
-            {formData.goalType === 'quantitative' && (
-              <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      목표값 *
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.targetValue}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          targetValue: Number(e.target.value),
-                        })
-                      }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      단위 *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.unit}
-                      onChange={(e) =>
-                        setFormData({ ...formData, unit: e.target.value })
-                      }
-                      placeholder="예) 점, 권, kg"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    현재값
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.currentValue}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        currentValue: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Habit Goal Fields */}
-            {formData.goalType === 'habit' && (
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  주간 목표 횟수 *
-                </label>
-                <input
-                  type="number"
-                  value={formData.weeklyFrequency}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      weeklyFrequency: Number(e.target.value),
-                    })
-                  }
-                  min="1"
-                  max="7"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                  required
-                />
-              </div>
-            )}
-
-            {/* Dates */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  시작일 *
-                </label>
-                <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, startDate: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  마감일
-                </label>
-                <input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, endDate: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Submit Buttons */}
-            <div className="flex space-x-4 pt-4">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
-              >
-                취소
-              </button>
-              <button
-                type="submit"
-                className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-              >
-                목표 생성
-              </button>
-            </div>
-          </form>
-        </div>
+          <div className="flex gap-4">
+            <button
+              type="submit"
+              className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              목표 만들기
+            </button>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="flex-1 bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            >
+              취소
+            </button>
+          </div>
+        </form>
       </div>
     </DashboardLayout>
   );

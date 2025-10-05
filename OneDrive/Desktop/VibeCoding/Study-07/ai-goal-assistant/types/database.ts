@@ -1,143 +1,140 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
 export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   public: {
     Tables: {
-      users: {
-        Row: {
-          id: string;
-          email: string;
-          password_hash: string;
-          name: string;
-          profile_image: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          email: string;
-          password_hash: string;
-          name: string;
-          profile_image?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          email?: string;
-          password_hash?: string;
-          name?: string;
-          profile_image?: string | null;
-          created_at?: string;
-        };
-      };
       goals: {
         Row: {
-          id: string;
-          user_id: string;
-          title: string;
-          description: string | null;
-          category: string;
-          goal_type: 'quantitative' | 'habit';
-          target_value: number | null;
-          current_value: number | null;
-          unit: string | null;
-          weekly_frequency: number | null;
-          start_date: string;
-          end_date: string | null;
-          status: 'active' | 'completed' | 'archived';
-          created_at: string;
-          updated_at: string;
-        };
+          category: string
+          created_at: string | null
+          current_value: number | null
+          description: string | null
+          end_date: string | null
+          goal_type: string
+          id: string
+          start_date: string
+          status: string | null
+          target_value: number | null
+          title: string
+          unit: string | null
+          updated_at: string | null
+          user_id: string
+          weekly_frequency: number | null
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          title: string;
-          description?: string | null;
-          category: string;
-          goal_type: 'quantitative' | 'habit';
-          target_value?: number | null;
-          current_value?: number | null;
-          unit?: string | null;
-          weekly_frequency?: number | null;
-          start_date: string;
-          end_date?: string | null;
-          status?: 'active' | 'completed' | 'archived';
-          created_at?: string;
-          updated_at?: string;
-        };
+          category: string
+          created_at?: string | null
+          current_value?: number | null
+          description?: string | null
+          end_date?: string | null
+          goal_type: string
+          id?: string
+          start_date: string
+          status?: string | null
+          target_value?: number | null
+          title: string
+          unit?: string | null
+          updated_at?: string | null
+          user_id: string
+          weekly_frequency?: number | null
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          title?: string;
-          description?: string | null;
-          category?: string;
-          goal_type?: 'quantitative' | 'habit';
-          target_value?: number | null;
-          current_value?: number | null;
-          unit?: string | null;
-          weekly_frequency?: number | null;
-          start_date?: string;
-          end_date?: string | null;
-          status?: 'active' | 'completed' | 'archived';
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
+          category?: string
+          created_at?: string | null
+          current_value?: number | null
+          description?: string | null
+          end_date?: string | null
+          goal_type?: string
+          id?: string
+          start_date?: string
+          status?: string | null
+          target_value?: number | null
+          title?: string
+          unit?: string | null
+          updated_at?: string | null
+          user_id?: string
+          weekly_frequency?: number | null
+        }
+      }
       daily_records: {
         Row: {
-          id: string;
-          goal_id: string;
-          date: string;
-          value: number | null;
-          increment: number | null;
-          completed: boolean | null;
-          note: string | null;
-          created_at: string;
-        };
+          completed: boolean | null
+          created_at: string | null
+          date: string
+          goal_id: string
+          id: string
+          increment: number | null
+          note: string | null
+          value: number | null
+        }
         Insert: {
-          id?: string;
-          goal_id: string;
-          date: string;
-          value?: number | null;
-          increment?: number | null;
-          completed?: boolean | null;
-          note?: string | null;
-          created_at?: string;
-        };
+          completed?: boolean | null
+          created_at?: string | null
+          date: string
+          goal_id: string
+          id?: string
+          increment?: number | null
+          note?: string | null
+          value?: number | null
+        }
         Update: {
-          id?: string;
-          goal_id?: string;
-          date?: string;
-          value?: number | null;
-          increment?: number | null;
-          completed?: boolean | null;
-          note?: string | null;
-          created_at?: string;
-        };
-      };
-      ai_conversations: {
+          completed?: boolean | null
+          created_at?: string | null
+          date?: string
+          goal_id?: string
+          id?: string
+          increment?: number | null
+          note?: string | null
+          value?: number | null
+        }
+      }
+      users: {
         Row: {
-          id: string;
-          user_id: string;
-          title: string;
-          messages: any;
-          created_at: string;
-          updated_at: string;
-        };
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          password_hash: string
+          profile_image: string | null
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          title: string;
-          messages?: any;
-          created_at?: string;
-          updated_at?: string;
-        };
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          password_hash: string
+          profile_image?: string | null
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          title?: string;
-          messages?: any;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-    };
-  };
-};
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          password_hash?: string
+          profile_image?: string | null
+        }
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}

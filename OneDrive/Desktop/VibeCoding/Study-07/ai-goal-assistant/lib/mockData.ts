@@ -1,211 +1,134 @@
-import { User, Goal, DailyRecord, AIConversation, AIMessage } from '@/types';
+import { Goal, DailyRecord, User } from '@/types';
 
-// Mock User
 export const mockUser: User = {
-  id: 'user-1',
-  email: 'test@example.com',
-  name: '홍길동',
-  createdAt: new Date('2025-01-01'),
+  id: '1',
+  email: 'user@example.com',
+  name: '김철수',
+  created_at: '2025-01-01T00:00:00Z'
 };
 
-// Mock Goals
 export const mockGoals: Goal[] = [
   {
-    id: 'goal-1',
-    userId: 'user-1',
-    title: 'TOEIC 900점 달성',
-    description: '영어 실력 향상을 위한 목표',
-    category: '학습',
-    goalType: 'quantitative',
-    targetValue: 900,
-    currentValue: 750,
-    unit: '점',
-    startDate: new Date('2025-01-01'),
-    endDate: new Date('2025-04-30'),
+    id: '1',
+    user_id: '1',
+    title: '매일 아침 운동하기',
+    description: '건강한 삶을 위해 매일 아침 30분씩 운동합니다.',
+    category: 'health',
+    start_date: '2025-01-01',
+    end_date: '2025-03-31',
+    target_value: 90,
+    unit: '일',
     status: 'active',
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-28'),
+    created_at: '2025-01-01T00:00:00Z',
+    updated_at: '2025-01-15T00:00:00Z',
+    progress: 65
   },
   {
-    id: 'goal-2',
-    userId: 'user-1',
-    title: '주 3회 운동',
-    description: '건강한 습관 만들기',
-    category: '건강',
-    goalType: 'habit',
-    weeklyFrequency: 3,
-    startDate: new Date('2025-01-01'),
+    id: '2',
+    user_id: '1',
+    title: 'Python 마스터하기',
+    description: '하루 2시간씩 Python 공부하기',
+    category: 'learning',
+    start_date: '2025-01-01',
+    end_date: '2025-06-30',
+    target_value: 180,
+    unit: '시간',
     status: 'active',
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-28'),
+    created_at: '2025-01-01T00:00:00Z',
+    updated_at: '2025-01-15T00:00:00Z',
+    progress: 42
   },
   {
-    id: 'goal-3',
-    userId: 'user-1',
-    title: '월 10권 독서',
-    description: '지식 확장을 위한 독서',
-    category: '학습',
-    goalType: 'quantitative',
-    targetValue: 10,
-    currentValue: 4,
+    id: '3',
+    user_id: '1',
+    title: '월 50만원 저축하기',
+    description: '재정 목표를 위해 매월 50만원씩 저축',
+    category: 'finance',
+    start_date: '2025-01-01',
+    end_date: '2025-12-31',
+    target_value: 600,
+    unit: '만원',
+    status: 'active',
+    created_at: '2025-01-01T00:00:00Z',
+    updated_at: '2025-01-15T00:00:00Z',
+    progress: 88
+  },
+  {
+    id: '4',
+    user_id: '1',
+    title: '자격증 취득하기',
+    description: '정보처리기사 자격증 공부',
+    category: 'career',
+    start_date: '2025-01-01',
+    end_date: '2025-04-30',
+    target_value: 120,
+    unit: '시간',
+    status: 'active',
+    created_at: '2025-01-01T00:00:00Z',
+    updated_at: '2025-01-15T00:00:00Z',
+    progress: 25
+  },
+  {
+    id: '5',
+    user_id: '1',
+    title: '독서 습관 만들기',
+    description: '매주 1권씩 책 읽기',
+    category: 'learning',
+    start_date: '2024-12-01',
+    end_date: '2025-02-28',
+    target_value: 12,
     unit: '권',
-    startDate: new Date('2025-01-01'),
-    endDate: new Date('2025-01-31'),
-    status: 'active',
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-25'),
-  },
-  {
-    id: 'goal-4',
-    userId: 'user-1',
-    title: '매일 30분 명상',
-    description: '마음의 평화를 위한 명상',
-    category: '건강',
-    goalType: 'habit',
-    weeklyFrequency: 7,
-    startDate: new Date('2025-01-01'),
-    status: 'active',
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-28'),
-  },
-  {
-    id: 'goal-5',
-    userId: 'user-1',
-    title: '부업으로 월 100만원',
-    description: '추가 수입 창출',
-    category: '재정',
-    goalType: 'quantitative',
-    targetValue: 1000000,
-    currentValue: 450000,
-    unit: '원',
-    startDate: new Date('2025-01-01'),
-    endDate: new Date('2025-12-31'),
-    status: 'active',
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-28'),
-  },
+    status: 'completed',
+    created_at: '2024-12-01T00:00:00Z',
+    updated_at: '2025-02-28T00:00:00Z',
+    progress: 100
+  }
 ];
 
-// Mock Daily Records
 export const mockDailyRecords: DailyRecord[] = [
-  // Goal 1 records
-  {
-    id: 'record-1',
-    goalId: 'goal-1',
-    date: new Date('2025-01-20'),
-    value: 720,
-    createdAt: new Date('2025-01-20'),
-  },
-  {
-    id: 'record-2',
-    goalId: 'goal-1',
-    date: new Date('2025-01-25'),
-    value: 750,
-    createdAt: new Date('2025-01-25'),
-  },
-  // Goal 2 records
-  {
-    id: 'record-3',
-    goalId: 'goal-2',
-    date: new Date('2025-01-27'),
-    completed: true,
-    note: '30분 러닝, 기분 좋음',
-    createdAt: new Date('2025-01-27'),
-  },
-  {
-    id: 'record-4',
-    goalId: 'goal-2',
-    date: new Date('2025-01-28'),
-    completed: true,
-    note: '웨이트 트레이닝',
-    createdAt: new Date('2025-01-28'),
-  },
-  // Goal 3 records
-  {
-    id: 'record-5',
-    goalId: 'goal-3',
-    date: new Date('2025-01-25'),
-    value: 4,
-    increment: 1,
-    note: '자기계발서 1권 완료',
-    createdAt: new Date('2025-01-25'),
-  },
+  // 운동 기록
+  { id: '1', goal_id: '1', record_date: '2025-01-01', value: 1, notes: '아침 조깅 30분', created_at: '2025-01-01T09:00:00Z' },
+  { id: '2', goal_id: '1', record_date: '2025-01-02', value: 1, notes: '홈트레이닝', created_at: '2025-01-02T09:00:00Z' },
+  { id: '3', goal_id: '1', record_date: '2025-01-03', value: 1, notes: '수영', created_at: '2025-01-03T09:00:00Z' },
+  { id: '4', goal_id: '1', record_date: '2025-01-05', value: 1, notes: '아침 요가', created_at: '2025-01-05T09:00:00Z' },
+
+  // Python 공부 기록
+  { id: '5', goal_id: '2', record_date: '2025-01-01', value: 2, notes: '기초 문법 복습', created_at: '2025-01-01T20:00:00Z' },
+  { id: '6', goal_id: '2', record_date: '2025-01-02', value: 3, notes: '데이터 구조 학습', created_at: '2025-01-02T20:00:00Z' },
+  { id: '7', goal_id: '2', record_date: '2025-01-03', value: 2, notes: '알고리즘 문제 풀이', created_at: '2025-01-03T20:00:00Z' },
+
+  // 저축 기록
+  { id: '8', goal_id: '3', record_date: '2025-01-31', value: 50, notes: '1월 저축', created_at: '2025-01-31T23:59:00Z' },
+  { id: '9', goal_id: '3', record_date: '2025-02-28', value: 50, notes: '2월 저축', created_at: '2025-02-28T23:59:00Z' },
+
+  // 자격증 공부 기록
+  { id: '10', goal_id: '4', record_date: '2025-01-01', value: 3, notes: '운영체제 공부', created_at: '2025-01-01T21:00:00Z' },
+  { id: '11', goal_id: '4', record_date: '2025-01-02', value: 2, notes: '데이터베이스 이론', created_at: '2025-01-02T21:00:00Z' },
 ];
 
-// Mock AI Conversations
-export const mockConversations: AIConversation[] = [
-  {
-    id: 'conv-1',
-    userId: 'user-1',
-    title: '운동 목표 조언',
-    messages: [
-      {
-        id: 'msg-1',
-        role: 'user',
-        content: '운동 목표를 어떻게 달성할 수 있을까요?',
-        timestamp: new Date('2025-01-28T10:00:00'),
-      },
-      {
-        id: 'msg-2',
-        role: 'assistant',
-        content: `현재 주 3회 운동 목표를 잘 진행하고 계시네요! 이번주 이미 2회 완료하셨습니다.
+// 통계를 위한 헬퍼 함수
+export function getGoalProgress(goalId: string): number {
+  const goal = mockGoals.find(g => g.id === goalId);
+  if (!goal) return 0;
 
-지속 가능한 운동 습관을 위한 추천 전략:
+  const records = mockDailyRecords.filter(r => r.goal_id === goalId);
+  const totalValue = records.reduce((sum, r) => sum + r.value, 0);
 
-1. 운동 시간을 고정하세요
-   - 매주 월, 수, 금 저녁 7시처럼 특정 시간대를 정하면 습관화가 쉬워집니다
+  return Math.min(Math.round((totalValue / goal.target_value) * 100), 100);
+}
 
-2. 작게 시작하세요
-   - 처음부터 과도한 목표는 오래 가지 못합니다
-   - 30분 가벼운 운동으로 시작해서 점진적으로 늘려가세요
+export function getCategoryDistribution() {
+  const distribution: Record<string, number> = {};
+  mockGoals.filter(g => g.status === 'active').forEach(goal => {
+    distribution[goal.category] = (distribution[goal.category] || 0) + 1;
+  });
+  return Object.entries(distribution).map(([name, value]) => ({ name, value }));
+}
 
-3. 운동 파트너를 만드세요
-   - 함께 운동하면 동기부여가 되고 빠지기 어려워집니다
-
-4. 다양한 운동을 시도하세요
-   - 러닝, 웨이트, 수영 등을 번갈아가며 하면 지루하지 않습니다
-
-현재 속도라면 충분히 목표를 달성하실 수 있어요!`,
-        timestamp: new Date('2025-01-28T10:01:00'),
-      },
-    ],
-    createdAt: new Date('2025-01-28T10:00:00'),
-    updatedAt: new Date('2025-01-28T10:01:00'),
-  },
-];
-
-// Helper function to calculate goal progress
-export const calculateProgress = (goal: Goal): number => {
-  if (goal.goalType === 'quantitative' && goal.targetValue && goal.currentValue) {
-    return Math.round((goal.currentValue / goal.targetValue) * 100);
-  }
-  if (goal.goalType === 'habit' && goal.weeklyFrequency) {
-    // For demo purposes, return mock progress
-    return Math.floor(Math.random() * 100);
-  }
-  return 0;
-};
-
-// Helper function to get goals by status
-export const getGoalsByStatus = (status: 'active' | 'completed') => {
-  return mockGoals.filter(goal => goal.status === status);
-};
-
-// Helper function to get recent activity data
-export const getRecentActivityData = () => {
-  const days = ['월', '화', '수', '목', '금', '토', '일'];
-  return days.map((day, index) => ({
-    day,
-    count: Math.floor(Math.random() * 5) + 1,
+export function getWeeklyProgress() {
+  const weeks = ['1주', '2주', '3주', '4주'];
+  return weeks.map((week) => ({
+    week,
+    progress: Math.floor(Math.random() * 40) + 60
   }));
-};
-
-// Helper function to get category distribution
-export const getCategoryDistribution = () => {
-  const categories = ['건강', '학습', '커리어', '취미', '재정'] as const;
-  return categories.map(category => ({
-    category,
-    count: mockGoals.filter(g => g.category === category).length,
-    avgProgress: Math.floor(Math.random() * 100),
-  }));
-};
+}

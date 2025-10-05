@@ -1,361 +1,240 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { useStore } from '@/store/useStore';
+import { use, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { calculateProgress } from '@/lib/mockData';
-import { ArrowLeft, Plus, Calendar } from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
-import { format } from 'date-fns';
+import { useStore } from '@/store/useStore';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-export default function GoalDetailPage() {
+export default function GoalDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const router = useRouter();
-  const params = useParams();
-  const { isAuthenticated, getGoalById, getRecordsByGoalId, addDailyRecord } =
-    useStore();
-
-  const goal = getGoalById(params.id as string);
-  const records = getRecordsByGoalId(params.id as string);
-
-  const [showAddRecord, setShowAddRecord] = useState(false);
-  const [newRecord, setNewRecord] = useState({
-    value: 0,
-    completed: false,
-    note: '',
-  });
+  const goals = useStore((state) => state.goals);
+  const dailyRecords = useStore((state) => state.dailyRecords);
+  const loadGoals = useStore((state) => state.loadGoals);
+  const loadDailyRecords = useStore((state) => state.loadDailyRecords);
+  const updateGoal = useStore((state) => state.updateGoal);
+  const deleteGoal = useStore((state) => state.deleteGoal);
+  const addDailyRecord = useStore((state) => state.addDailyRecord);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
+    loadGoals();
+    loadDailyRecords();
+  }, [loadGoals, loadDailyRecords]);
 
-  if (!isAuthenticated || !goal) {
-    return null;
+  const goal = goals.find((g) => g.id === resolvedParams.id);
+  const records = dailyRecords.filter((r) => r.goal_id === resolvedParams.id);
+
+  const [newRecordValue, setNewRecordValue] = useState('');
+  const [newRecordNotes, setNewRecordNotes] = useState('');
+
+  if (!goal) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-12">
+          <p className="text-gray-500">목표를 찾을 수 없습니다.</p>
+        </div>
+      </DashboardLayout>
+    );
   }
 
-  const progress = calculateProgress(goal);
+  const handleAddRecord = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  // Generate mock progress trend data
-  const progressTrend = Array.from({ length: 10 }, (_, i) => ({
-    date: format(
-      new Date(Date.now() - (9 - i) * 24 * 60 * 60 * 1000),
-      'MM/dd'
-    ),
-    value: Math.floor(Math.random() * 100),
-  }));
-
-  const handleAddRecord = () => {
-    if (goal.goalType === 'quantitative' && newRecord.value <= 0) {
-      alert('값을 입력해주세요.');
-      return;
-    }
-
-    addDailyRecord({
-      goalId: goal.id,
-      date: new Date(),
-      value: goal.goalType === 'quantitative' ? newRecord.value : undefined,
-      completed: goal.goalType === 'habit' ? newRecord.completed : undefined,
-      note: newRecord.note || undefined,
+    await addDailyRecord({
+      goal_id: goal.id,
+      record_date: new Date().toISOString().split('T')[0],
+      value: Number(newRecordValue),
+      notes: newRecordNotes
     });
 
-    setShowAddRecord(false);
-    setNewRecord({ value: 0, completed: false, note: '' });
+    setNewRecordValue('');
+    setNewRecordNotes('');
   };
+
+  const handleDelete = async () => {
+    if (confirm('정말로 이 목표를 삭제하시겠습니까?')) {
+      await deleteGoal(goal.id);
+      router.push('/goals');
+    }
+  };
+
+  const handleComplete = async () => {
+    await updateGoal(goal.id, { status: 'completed' });
+  };
+
+  // Chart data
+  const chartData = records
+    .sort((a, b) => new Date(a.record_date).getTime() - new Date(b.record_date).getTime())
+    .map((record, index, arr) => {
+      const cumulative = arr.slice(0, index + 1).reduce((sum, r) => sum + r.value, 0);
+      return {
+        date: new Date(record.record_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
+        value: cumulative,
+        progress: Math.min(Math.round((cumulative / goal.target_value) * 100), 100)
+      };
+    });
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto space-y-6">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>뒤로가기</span>
-        </button>
-
-        {/* Goal Header */}
-        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center space-x-3 mb-2">
-                <span className="text-3xl">
-                  {goal.category === '건강' && '💪'}
-                  {goal.category === '학습' && '🎓'}
-                  {goal.category === '커리어' && '💼'}
-                  {goal.category === '취미' && '🎨'}
-                  {goal.category === '재정' && '💰'}
-                  {goal.category === '기타' && '📌'}
-                </span>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {goal.title}
-                </h1>
-              </div>
-              <p className="text-gray-600">{goal.description}</p>
-            </div>
-            <span className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
-              {goal.category}
-            </span>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{goal.title}</h1>
+            <p className="text-gray-600 mt-1">{goal.description}</p>
           </div>
+          <span className={`px-4 py-2 rounded-full text-sm font-medium ${
+            goal.category === 'health' ? 'bg-green-100 text-green-700' :
+            goal.category === 'learning' ? 'bg-blue-100 text-blue-700' :
+            goal.category === 'finance' ? 'bg-yellow-100 text-yellow-700' :
+            goal.category === 'career' ? 'bg-purple-100 text-purple-700' :
+            'bg-gray-100 text-gray-700'
+          }`}>
+            {goal.category === 'health' ? '건강' :
+             goal.category === 'learning' ? '학습' :
+             goal.category === 'finance' ? '재정' :
+             goal.category === 'career' ? '커리어' : '기타'}
+          </span>
+        </div>
 
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="relative inline-flex items-center justify-center w-32 h-32">
-                <svg className="w-32 h-32 transform -rotate-90">
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="56"
-                    stroke="#e5e7eb"
-                    strokeWidth="8"
-                    fill="none"
-                  />
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="56"
-                    stroke="#6366f1"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 56}`}
-                    strokeDashoffset={`${
-                      2 * Math.PI * 56 * (1 - progress / 100)
-                    }`}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute">
-                  <div className="text-3xl font-bold text-indigo-600">
-                    {progress}%
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 text-gray-600">
-                {goal.goalType === 'quantitative' && (
-                  <p className="text-lg">
-                    {goal.currentValue} / {goal.targetValue} {goal.unit}
-                  </p>
-                )}
-                {goal.goalType === 'habit' && (
-                  <p className="text-lg">주 {goal.weeklyFrequency}회 목표</p>
-                )}
-              </div>
+        {/* Goal Info */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="grid grid-cols-3 gap-6 mb-6">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">목표 수치</p>
+              <p className="text-2xl font-bold text-gray-900">{goal.target_value} {goal.unit}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1">현재 달성</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {records.reduce((sum, r) => sum + r.value, 0)} {goal.unit}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1">진행률</p>
+              <p className="text-2xl font-bold text-purple-600">{goal.progress}%</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-200">
-            <div className="text-center">
-              <p className="text-sm text-gray-500">시작일</p>
-              <p className="font-medium text-gray-900">
-                {goal.startDate.replace(/-/g, '.')}
-              </p>
-            </div>
-            {goal.endDate && (
-              <div className="text-center">
-                <p className="text-sm text-gray-500">마감일</p>
-                <p className="font-medium text-gray-900">
-                  {goal.endDate.replace(/-/g, '.')}
-                </p>
-              </div>
-            )}
-            <div className="text-center">
-              <p className="text-sm text-gray-500">진행 일수</p>
-              <p className="font-medium text-gray-900">
-                {Math.floor(
-                  (Date.now() - new Date(goal.startDate).getTime()) /
-                    (1000 * 60 * 60 * 24)
-                )}
-                일
-              </p>
-            </div>
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div
+              className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all"
+              style={{ width: `${goal.progress}%` }}
+            />
+          </div>
+
+          <div className="mt-6 flex justify-between text-sm text-gray-600">
+            <span>시작: {new Date(goal.start_date).toLocaleDateString('ko-KR')}</span>
+            <span>종료: {new Date(goal.end_date).toLocaleDateString('ko-KR')}</span>
           </div>
         </div>
 
         {/* Progress Chart */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">진행 추이</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={progressTrend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#6366f1"
-                strokeWidth={2}
-                dot={{ fill: '#6366f1' }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Recent Records */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">최근 기록</h2>
-            <button
-              onClick={() => setShowAddRecord(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-            >
-              <Plus className="w-4 h-4" />
-              <span>기록 추가</span>
-            </button>
+        {chartData.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">진행 추이</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
+        )}
 
-          {/* Add Record Form */}
-          {showAddRecord && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <h3 className="font-medium text-gray-900 mb-4">새 기록 추가</h3>
-              <div className="space-y-4">
-                {goal.goalType === 'quantitative' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      값
-                    </label>
-                    <input
-                      type="number"
-                      value={newRecord.value}
-                      onChange={(e) =>
-                        setNewRecord({
-                          ...newRecord,
-                          value: Number(e.target.value),
-                        })
-                      }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                  </div>
-                )}
-                {goal.goalType === 'habit' && (
-                  <div>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={newRecord.completed}
-                        onChange={(e) =>
-                          setNewRecord({
-                            ...newRecord,
-                            completed: e.target.checked,
-                          })
-                        }
-                        className="w-5 h-5 text-indigo-600 rounded"
-                      />
-                      <span className="ml-2 text-sm font-medium text-gray-700">
-                        완료
-                      </span>
-                    </label>
-                  </div>
-                )}
+        {/* Add Daily Record */}
+        {goal.status === 'active' && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">일일 기록 추가</h2>
+            <form onSubmit={handleAddRecord} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    메모
+                  <label htmlFor="value" className="block text-sm font-medium text-gray-700 mb-2">
+                    달성량 ({goal.unit})
                   </label>
                   <input
-                    type="text"
-                    value={newRecord.note}
-                    onChange={(e) =>
-                      setNewRecord({ ...newRecord, note: e.target.value })
-                    }
-                    placeholder="오늘의 기록을 남겨보세요"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                    id="value"
+                    type="number"
+                    value={newRecordValue}
+                    onChange={(e) => setNewRecordValue(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="오늘 달성한 수치"
+                    required
+                    min="0"
                   />
                 </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setShowAddRecord(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={handleAddRecord}
-                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                  >
-                    저장
-                  </button>
+                <div>
+                  <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                    메모 (선택)
+                  </label>
+                  <input
+                    id="notes"
+                    type="text"
+                    value={newRecordNotes}
+                    onChange={(e) => setNewRecordNotes(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="간단한 메모"
+                  />
                 </div>
               </div>
-            </div>
-          )}
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                기록 추가
+              </button>
+            </form>
+          </div>
+        )}
 
-          {/* Records List */}
-          <div className="space-y-3">
-            {records.length === 0 ? (
-              <div className="text-center py-12">
-                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">아직 기록이 없습니다.</p>
-                <p className="text-gray-400 text-sm mt-2">
-                  첫 기록을 남겨보세요!
-                </p>
-              </div>
-            ) : (
-              records
-                .slice()
-                .reverse()
+        {/* Daily Records */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">기록 내역</h2>
+          {records.length > 0 ? (
+            <div className="space-y-3">
+              {records
+                .sort((a, b) => new Date(b.record_date).getTime() - new Date(a.record_date).getTime())
                 .map((record) => (
-                  <div
-                    key={record.id}
-                    className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-900">
-                        {record.date.replace(/-/g, '. ').replace('T', ' ').split('.')[0]}년 {record.date.split('-')[1]}월 {record.date.split('-')[2].substring(0, 2)}일
-                      </span>
-                      {record.value !== undefined && (
-                        <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
-                          {record.increment !== undefined &&
-                            record.increment > 0 &&
-                            '+'}
-                          {record.increment || record.value} {goal.unit}
-                        </span>
-                      )}
-                      {record.completed && (
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                          완료
-                        </span>
+                  <div key={record.id} className="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {record.value} {goal.unit}
+                      </p>
+                      {record.notes && (
+                        <p className="text-sm text-gray-600 mt-1">{record.notes}</p>
                       )}
                     </div>
-                    {record.note && (
-                      <p className="text-sm text-gray-600">{record.note}</p>
-                    )}
+                    <span className="text-sm text-gray-500">
+                      {new Date(record.record_date).toLocaleDateString('ko-KR')}
+                    </span>
                   </div>
-                ))
-            )}
-          </div>
+                ))}
+            </div>
+          ) : (
+            <p className="text-center text-gray-500 py-8">아직 기록이 없습니다.</p>
+          )}
         </div>
 
-        {/* AI Analysis */}
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-sm p-6 border border-indigo-100">
-          <div className="flex items-start space-x-4">
-            <div className="text-3xl">🤖</div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
-                AI 분석
-              </h3>
-              <p className="text-gray-700 mb-4">
-                현재 목표의 진행률이 {progress}%입니다.
-                {progress >= 80 && ' 정말 잘하고 계시네요!'}
-                {progress >= 50 && progress < 80 && ' 좋은 페이스입니다!'}
-                {progress < 50 && ' 조금 더 노력하면 좋을 것 같아요.'}
-              </p>
-              <button
-                onClick={() => router.push('/ai-coach')}
-                className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
-              >
-                AI 코칭 받기 →
-              </button>
-            </div>
-          </div>
+        {/* Actions */}
+        <div className="flex gap-4">
+          {goal.status === 'active' && (
+            <button
+              onClick={handleComplete}
+              className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+            >
+              ✅ 목표 달성 완료
+            </button>
+          )}
+          <button
+            onClick={handleDelete}
+            className="flex-1 bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
+          >
+            🗑️ 목표 삭제
+          </button>
         </div>
       </div>
     </DashboardLayout>
